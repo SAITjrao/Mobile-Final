@@ -1,19 +1,19 @@
-import { View, Text, Pressable, StyleSheet, KeyboardAvoidingView, TextInput, Platform, TouchableOpacity, Keyboard } from "react-native"
+import { Alert, View, Text, Pressable, StyleSheet, KeyboardAvoidingView, TextInput, Platform, TouchableOpacity, Keyboard, Modal } from "react-native"
 import { signOut } from "../lib/supabase_auth"
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Task from "../components/Task";
 import { useState } from "react";
+import CreateTaskModal from "../components/CreateTaskModal";
 
-export default function Welcome() {
+const Welcome = () => {
   const { userEmail } = useLocalSearchParams();
   const router = useRouter();
-  const [task, setTask] = useState();
   const [taskItems, setTaskItems] = useState([]);
 
-  const handleAddTask = () => {
-    Keyboard.dismiss();
-    setTaskItems([...taskItems, task])
-    setTask(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handleAddTask = (task) => {
+    console.log(task);
   }
   const completeTask = (index) => {
     let itemsCopy = [...taskItems];
@@ -53,12 +53,17 @@ export default function Welcome() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.writeTaskWrapper}
         >
-        <TextInput style={styles.input} value={task} placeholder={"Write a Task"} onChangeText={text => setTask(text)}/>
-        <TouchableOpacity onPress={() => handleAddTask()}> 
+        {/*<TextInput style={styles.input} value={task} placeholder={"Write a Task"} onChangeText={text => setTask(text)}/>
+        */}
+        <TouchableOpacity onPress={() => setModalVisible(true)}> 
           <View style={styles.addWrapper}>
             <Text style={styles.addText}>+</Text>
           </View>
         </TouchableOpacity>
+        <CreateTaskModal visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onCreateTask={handleAddTask}
+          />
       </KeyboardAvoidingView>
     </View>
   );
@@ -67,6 +72,8 @@ export default function Welcome() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#ffffff',
   },  
   pressable: {
@@ -125,3 +132,5 @@ const styles = StyleSheet.create({
     
   },
 })
+
+export default Welcome;

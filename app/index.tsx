@@ -1,4 +1,4 @@
-import { StyleSheet, TextInput, View, Pressable, Text } from 'react-native';
+import { StyleSheet, TextInput, View, Pressable, Text, } from 'react-native';
 import { signUp, signIn, signOut } from '../lib/supabase_auth';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
@@ -15,15 +15,6 @@ export default function App() {
         }
     }, [isSignedIn]);
 
-    const handleSignUp = async () => {
-        try {
-            const user = await signUp(email, password);
-            console.log("user", user);
-        } catch (error) {
-            console.error("Error signing up:", error);
-        }
-    }
-
     const handleSignIn = async () => {
         try {
           const user = await signIn(email, password);
@@ -37,12 +28,13 @@ export default function App() {
               });
           }
         } catch (error) {
-          console.error("Error signing in:", error);
+          console.log(error);
         }
     }
-    
+
     return (
         <View style={styles.container}>
+            <Text style={styles.header}>Sign In</Text>    
             <TextInput
                 style={styles.input}
                 value={email}
@@ -59,18 +51,17 @@ export default function App() {
                 placeholder="Password"
                 secureTextEntry
             />
-            
-            <Pressable onPress={handleSignUp} style={styles.pressable}>
-                <Text style={styles.button}>Sign Up</Text>
-            </Pressable>
             <Pressable onPress={handleSignIn} style={styles.pressable}>
                 <Text style={styles.button}>Sign In</Text>
             </Pressable>
-            
-            {isSignedIn && <Text style={styles.status}>You are signed in!</Text>}
+            <Text>Don't have an account?</Text>
+            <Pressable onPress={() => {router.replace('/Sign_up')}} style={styles.pressable}>
+                <Text style={styles.button}>Sign Up</Text>
+            </Pressable>
         </View>  
     );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -107,5 +98,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
     color: 'green',
     fontWeight: 'bold',
+  },
+  header: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 16,
   },
 });
