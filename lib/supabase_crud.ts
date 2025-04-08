@@ -32,7 +32,7 @@ export async function getTasks(userId) {
   try {
     const { data, error} = await supabase
       .from(TASK_TABLE)
-      .select('title, deadline, priority')
+      .select('id, title, deadline, priority')
       .eq('created_by', userId)
       .order('deadline', {ascending: false});
 
@@ -43,4 +43,22 @@ export async function getTasks(userId) {
     console.log(error);
     throw error;
   }
+}
+
+export async function updateTask(taskId, taskData) {
+  try {    
+    if(!taskId) {
+      throw new Error("Task ID is missing");
+    }
+    const { data, error } = await supabase
+      .from(TASK_TABLE)
+      .update(taskData)
+      .eq('id', taskId)
+      .select()
+      
+      if (error) throw error;
+      console.log('Updated task:', data);
+    } catch (error) {
+      console.log('Error updating task:', error);
+    }
 }

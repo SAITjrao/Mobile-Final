@@ -1,41 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Button, Menu, Divider, Provider } from 'react-native-paper';
+import { Alert, Button, Menu, Divider, Provider } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
 
-const CreateTaskModal = ({ visible, onClose, onCreateTask}) => {
+const TaskModal = ({ 
+  visible, 
+  onClose, 
+  onSubmit, 
+  mode = 'create', 
+  task = null,
+  editForm,
+  setEditForm}) => {
   const [taskTitle, setTaskTitle] = useState('');
   const [deadline, setDeadline] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [priority, setPriority] = useState('medium');
 
-  const handleCreateTask = () => {
+  useEffect(() => {
+    if (mode === 'edit' && task) {
+      console.log('Editing task:', task);
+      setTaskTitle(task.title);
+      setDeadline(new Date(task.deadline));
+      setPriority(task.priority || 'medium');
+    } else {
+      // Reset form for create mode
+      setTaskTitle('');
+      setDeadline(new Date());
+      setPriority('medium');
+    }
+  }, [mode, task]);
+
+  const handleSubmit = () => {
     if (!taskTitle.trim()) {
-      alert('Please enter a task title');
+      Alert.alert('Error', 'Please enter a task title');
       return;
     }
 
-    if (!priority) {
-        alert('Please select a priority');
-        return;
-    }
-
-    onCreateTask({
-        title: taskTitle,
-        deadline: deadline,
-        priority: priority.toLowerCase()
+    onSubmit({
+      title: taskTitle,
+      deadline: deadline.toISOString(),
+      priority: priority.toLowerCase()
     });
-
-    // Reset form
-    setTaskTitle('');
-    setDeadline(new Date());
-    setPriority('medium');
   };
   
   const onChangeDate = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
+      setEditForm({...editForm, deadline: selectedDate})
       setDeadline(selectedDate);
     }
   };
@@ -73,8 +85,8 @@ const CreateTaskModal = ({ visible, onClose, onCreateTask}) => {
             <TextInput
               style={styles.input}
               placeholder="Task Title"
-              value={taskTitle}
-              onChangeText={setTaskTitle}
+              value={editForm.title}
+              onChangeText={(text) => setEditForm({...editForm, title:text})}
             />
 
             {/* Deadline Picker */}
@@ -89,7 +101,7 @@ const CreateTaskModal = ({ visible, onClose, onCreateTask}) => {
 
             {showDatePicker && (
               <DateTimePicker
-                value={deadline}
+                value={editForm.deadline}
                 mode="date"
                 display="default"
                 onChange={onChangeDate}
@@ -102,29 +114,35 @@ const CreateTaskModal = ({ visible, onClose, onCreateTask}) => {
                 label="Low"
                 value="low"
                 isSelected={priority === 'low'}
-                onPress={() => setPriority('low')}
+                onPress={() => {
+                  setEditForm({...editForm, priority: 'low'})
+                  setPriority('low')}}
               />
               <PriorityButton
                 label="Medium"
                 value="medium"
                 isSelected={priority === 'medium'}
-                onPress={() => setPriority('medium')}
+                onPress={() => {
+                  setEditForm({...editForm, priority: 'medium'})
+                  setPriority('medium')}}
               />
               <PriorityButton
                 label="High"
                 value="high"
                 isSelected={priority === 'high'}
-                onPress={() => setPriority('high')}
+                onPress={() => {
+                  setEditForm({...editForm, priority: 'high'})
+                  setPriority('high')}}
               />
             </View>
 
             <View style={styles.buttonContainer}>
               <Button 
                 mode="contained" 
-                onPress={handleCreateTask}
+                onPress={handleSubmit}
                 style={styles.createButton}
               >
-                Create Task
+                {mode === 'edit' ? 'Update Task' : 'Create Task'}
               </Button>
               <Button 
                 mode="outlined" 
@@ -259,4 +277,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CreateTaskModal;
+export default TaskModal;

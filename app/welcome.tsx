@@ -1,18 +1,26 @@
 import supabase from "../lib/supabase";
 import { signOut } from "../lib/supabase_auth"
-import { addTask, getTasks, getUser } from "../lib/supabase_crud";
+import { addTask, getTasks, getUser, updateTask } from "../lib/supabase_crud";
 import { useRouter } from "expo-router";
 import { useEffect, useState, } from "react";
 import { Alert, ScrollView, View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Keyboard, Modal } from "react-native"
 import CreateTaskModal from "../components/CreateTaskModal";
+import TaskModal from "../components/TaskModal";
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 const Welcome = () => {
   const [userId, setUserId] = useState(null);
   const [signedIn, setSignedIn] = useState('');
-  const router = useRouter();
   const [taskItems, setTaskItems] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    deadline: new Date(),
+    priority: 'low'
+  });
+  const router = useRouter();
 
   //grab user data
   useEffect(() => {
@@ -33,13 +41,6 @@ const Welcome = () => {
     setSignedIn(user[0]);
   }
 
-  //load tasks when userId changes
-  useEffect(() => {
-    if(userId) {
-      fetchTasks();
-    }
-  }, [userId, fetchTasks]);
-
   //function to load tasks from database
   const fetchTasks = async () => {
     try {
@@ -49,6 +50,24 @@ const Welcome = () => {
       console.log('Error', 'failed to load tasks');
     }
   };
+
+  //load tasks when userId changes
+  useEffect(() => {
+    if(userId) {
+      fetchTasks();
+    }
+  }, [userId]);
+
+  //update edit form when values are changed
+  useEffect(() => {
+    if (selectedTask) {
+      setEditForm({
+        title: selectedTask.title,
+        deadline: new Date(selectedTask.deadline),
+        priority: selectedTask.priority,
+      });
+    }
+  }, [selectedTask]);
 
   //create new task and refresh task list
   const handleCreateTask = async (taskData) => {
@@ -60,6 +79,37 @@ const Welcome = () => {
       alert(error.message);
     }
   };
+  
+  // load task in modal when clicked on
+  const handleTaskPress = (task) => {
+    console.log('Selected Task', task);
+    setSelectedTask(task);
+    console.log('Selected task is:', selectedTask);
+    setEditForm({
+      title: task.title,
+      deadline: new Date(task.deadline), // Ensure the deadline is in Date format
+      priority: task.priority
+    });
+    setEditModalVisible(true);
+  }
+
+  const handleUpdateTask = async () => {
+    try {
+      console.log(editForm);
+      await updateTask(selectedTask.id, editForm);
+      await fetchTasks();
+      handleCloseEditModal();
+    } catch (error) {
+      Alert.alert("Error", "Failed to update task");
+      console.log(error);
+    }
+  };
+
+  // close modal and reset variable
+  const handleCloseEditModal = () => {
+    setEditModalVisible(false);
+    setSelectedTask(null);
+  }
 
   //signs out the user
   const handleSignOut = async () => {
@@ -86,6 +136,7 @@ const Welcome = () => {
       day: 'numeric',
     };
     
+    //map all tasks and display
     return taskItems.map((item, index) => (
       <View key={`${item.title}-${index}`} style={[
         styles.taskItem,
@@ -93,27 +144,52 @@ const Welcome = () => {
         item.priority === 'medium' && styles.mediumPriority,
         item.priority === 'low' && styles.lowPriority,
       ]}>
-        <Text style={styles.taskTitle}>{item.title}</Text>
-        <View style={styles.taskMeta}>
-          <Text style={styles.taskDeadline}>
-            📅 {new Date(item.deadline).toLocaleDateString(undefined, dateOptions)}
-          </Text>
-          {item.priority && (
-            <Text style={styles.taskPriority}>
-              ⚡ {item.priority.toUpperCase()}
+        <TouchableOpacity
+          key={item.id}
+          onPress={() => {
+            console.log('Item clicked:', item);
+            handleTaskPress(item);
+          }}
+          style={styles.taskItem}  
+        >
+          <Text style={styles.taskTitle}>{item.title}</Text>
+          <View style={styles.taskMeta}>
+            <Text style={styles.taskDeadline}>
+              📅 {new Date(item.deadline).toLocaleDateString(undefined, dateOptions)}
             </Text>
-          )}
-        </View>
+            {item.priority && (
+              <Text style={styles.taskPriority}>
+                ⚡ {item.priority.toUpperCase()}
+              </Text>
+            )}
+          </View>
+        </TouchableOpacity>
       </View>
     ));
   };
 
+  const PriorityButton = ({ label, value, isSelected, onPress }) => (
+      <TouchableOpacity
+        style={[
+          styles.priorityButton,
+          isSelected && styles[`${value}PrioritySelected`]
+        ]}
+        onPress={onPress}
+      >
+        <Text style={[
+          styles.priorityButtonText,
+          isSelected && styles[`${value}PriorityText`]
+        ]}>
+          {label}
+        </Text>
+      </TouchableOpacity>
+    );
 
   return (
     <View style={styles.container}>
 
       <View style={styles.header}>
-        <Text style={styles.welcome}>Welcome, {signedIn.first_name + signedIn.last_name}!</Text>
+        <Text style={styles.welcome}>Welcome, {signedIn.first_name} {signedIn.last_name}!</Text>
         <TouchableOpacity onPress={handleSignOut}>
           <Text style={styles.welcome}>Sign Out</Text>
         </TouchableOpacity>
@@ -129,7 +205,7 @@ const Welcome = () => {
           </View>
       </View>
 
-      {/* write a task*/}
+      {/* Add new task*/}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.writeTaskWrapper}
@@ -141,10 +217,20 @@ const Welcome = () => {
         </TouchableOpacity>
       </KeyboardAvoidingView>
 
+      {/* Add Task Modal */}
       <CreateTaskModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onCreateTask={handleCreateTask}
+      />
+      <TaskModal 
+        visible={editModalVisible}
+        onClose={handleCloseEditModal}
+        onSubmit={handleUpdateTask}
+        mode="edit"
+        task={selectedTask}
+        editForm={editForm}
+        setEditForm={setEditForm}
       />
     </View>
   );
@@ -265,7 +351,43 @@ const styles = StyleSheet.create({
   },
   addText: {
     fontSize: 24,
-    fontWeight: 'semi-bold',
+    fontWeight: 'semibold',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  priorityButton: {
+    flex: 1,
+    marginHorizontal: 4,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  priorityButtonText: {
+    fontSize: 16,
+    color: '#666',
   },
 })
 
