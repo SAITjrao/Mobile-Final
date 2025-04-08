@@ -14,6 +14,7 @@ export async function signUp(email: string, password: string, firstName: string,
     .from('user_details')
     .insert([
         {
+            UUID: data.user.id,
             email: email,
             password: password,
             first_name: firstName,

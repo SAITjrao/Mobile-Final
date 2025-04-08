@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@react-native-community/datetimepicker": "8.2.0",
+    "@react-native-picker/picker": "^2.11.0",
     "@supabase/supabase-js": "^2.49.4",
     "expo": "~52.0.41",
     "expo-router": "~4.0.19",

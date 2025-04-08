@@ -3,7 +3,7 @@ import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet } from 'reac
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Button, Menu, Divider, Provider } from 'react-native-paper';
 
-const CreateTaskModal = ({ visible, onClose, onCreateTask }) => {
+const CreateTaskModal = ({ visible, onClose, onCreateTask}) => {
   const [taskTitle, setTaskTitle] = useState('');
   const [deadline, setDeadline] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -15,18 +15,7 @@ const CreateTaskModal = ({ visible, onClose, onCreateTask }) => {
       alert('Please enter a task title');
       return;
     }
-
-    onCreateTask({
-      title: taskTitle,
-      deadline: deadline.toISOString(),
-      priority: priority.toLowerCase()
-    });
-
-    // Reset form
-    setTaskTitle('');
-    setDeadline(new Date());
-    setPriority('Medium');
-    onClose();
+    
   };
 
   const onChangeDate = (event, selectedDate) => {
