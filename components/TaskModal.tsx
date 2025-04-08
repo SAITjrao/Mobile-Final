@@ -79,7 +79,7 @@ const TaskModal = ({
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <Text style={styles.modalTitle}>Create New Task</Text>
+            <Text style={styles.modalTitle}>Edit Task</Text>
 
             {/* Task Title Input */}
             <TextInput

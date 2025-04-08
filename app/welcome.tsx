@@ -1,12 +1,13 @@
 import supabase from "../lib/supabase";
 import { signOut } from "../lib/supabase_auth"
-import { addTask, getTasks, getUser, updateTask } from "../lib/supabase_crud";
+import { addTask, deleteTask, getTasks, getUser, updateTask } from "../lib/supabase_crud";
 import { useRouter } from "expo-router";
 import { useEffect, useState, } from "react";
 import { Alert, ScrollView, View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Keyboard, Modal } from "react-native"
 import CreateTaskModal from "../components/CreateTaskModal";
 import TaskModal from "../components/TaskModal";
 import Icon from 'react-native-vector-icons/FontAwesome';
+import Checkbox from 'react-native-vector-icons/Fontisto';
 
 const Welcome = () => {
   const [userId, setUserId] = useState(null);
@@ -58,17 +59,6 @@ const Welcome = () => {
     }
   }, [userId]);
 
-  //update edit form when values are changed
-  useEffect(() => {
-    if (selectedTask) {
-      setEditForm({
-        title: selectedTask.title,
-        deadline: new Date(selectedTask.deadline),
-        priority: selectedTask.priority,
-      });
-    }
-  }, [selectedTask]);
-
   //create new task and refresh task list
   const handleCreateTask = async (taskData) => {
     try {
@@ -93,9 +83,9 @@ const Welcome = () => {
     setEditModalVisible(true);
   }
 
+  //update task in database and refresh
   const handleUpdateTask = async () => {
     try {
-      console.log(editForm);
       await updateTask(selectedTask.id, editForm);
       await fetchTasks();
       handleCloseEditModal();
@@ -105,7 +95,17 @@ const Welcome = () => {
     }
   };
 
-  // close modal and reset variable
+  //delete tasks from database
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await deleteTask(taskId);
+      await fetchTasks();
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  // close modal and reset selectedTask
   const handleCloseEditModal = () => {
     setEditModalVisible(false);
     setSelectedTask(null);
@@ -139,17 +139,23 @@ const Welcome = () => {
     //map all tasks and display
     return taskItems.map((item, index) => (
       <View key={`${item.title}-${index}`} style={[
-        styles.taskItem,
+        styles.taskItemContainer,
         item.priority === 'high' && styles.highPriority,
         item.priority === 'medium' && styles.mediumPriority,
         item.priority === 'low' && styles.lowPriority,
       ]}>
+        <TouchableOpacity 
+          style={styles.checkboxContainer}  
+          onPress={() => handleDeleteTask(item.id)}
+        >
+          <Checkbox name="checkbox-passive" size={16} color="black" /> 
+        </TouchableOpacity>
         <TouchableOpacity
           key={item.id}
+          style={styles.taskContent}
           onPress={() => {
             handleTaskPress(item);
           }}
-          style={styles.taskItem}  
         >
           <Text style={styles.taskTitle}>{item.title}</Text>
           <View style={styles.taskMeta}>
@@ -166,23 +172,6 @@ const Welcome = () => {
       </View>
     ));
   };
-
-  const PriorityButton = ({ label, value, isSelected, onPress }) => (
-      <TouchableOpacity
-        style={[
-          styles.priorityButton,
-          isSelected && styles[`${value}PrioritySelected`]
-        ]}
-        onPress={onPress}
-      >
-        <Text style={[
-          styles.priorityButtonText,
-          isSelected && styles[`${value}PriorityText`]
-        ]}>
-          {label}
-        </Text>
-      </TouchableOpacity>
-    );
 
   return (
     <View style={styles.container}>
@@ -239,6 +228,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
+  },
+  taskItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    borderLeftWidth: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  checkboxContainer: {
+    padding: 10,
+    marginRight: 10,
+  },
+  taskContent: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -303,8 +313,6 @@ const styles = StyleSheet.create({
     borderColor: 'white',
   },
   taskItem: {
-    padding: 15,
-    marginBottom: 10,
     backgroundColor: '#ffffff',
     borderRadius: 8,
     borderLeftWidth: 5,
