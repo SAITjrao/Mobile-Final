@@ -62,3 +62,21 @@ export async function updateTask(taskId, taskData) {
       console.log('Error updating task:', error);
     }
 }
+
+export async function deleteTask(taskId) {
+  try {
+    if(!taskId) {
+      throw new Error("Task ID is missing");
+    }
+    const { error } = await supabase
+      .from(TASK_TABLE)
+      .delete()
+      .eq('id', taskId)
+
+    if (error) throw error;
+    console.log('Deleted task: ', taskId);
+    return true;
+  } catch (error) {
+    console.error('Error deleting task:', error.message)
+  }
+}

@@ -147,7 +147,6 @@ const Welcome = () => {
         <TouchableOpacity
           key={item.id}
           onPress={() => {
-            console.log('Item clicked:', item);
             handleTaskPress(item);
           }}
           style={styles.taskItem}  
