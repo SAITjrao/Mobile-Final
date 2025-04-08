@@ -10,7 +10,6 @@ export async function getUser(userId) {
       .eq('UUID', userId)
 
     if (error) throw new Error("User not found");
-  
     return data;
   }
 

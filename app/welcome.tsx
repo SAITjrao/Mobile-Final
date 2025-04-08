@@ -3,7 +3,7 @@ import { signOut } from "../lib/supabase_auth"
 import { addTask, getTasks, getUser } from "../lib/supabase_crud";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ScrollView, View, Text, Pressable, StyleSheet, KeyboardAvoidingView, TextInput, Platform, TouchableOpacity, Keyboard, Modal } from "react-native"
+import { Alert, ScrollView, View, Text, Pressable, StyleSheet, KeyboardAvoidingView, TextInput, Platform, TouchableOpacity, Keyboard, Modal } from "react-native"
 import Task from "../components/Task";
 import CreateTaskModal from "../components/CreateTaskModal";
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -27,7 +27,7 @@ const Welcome = () => {
 
       if (user) {
         setUserId(user.id); //sets current session user id to UUID
-        loadUser(user.id);
+        await loadUser(user.id);
       }
     };
 
@@ -37,7 +37,7 @@ const Welcome = () => {
   //get first & last name of user
   const loadUser = async (id) => {
     const user = await getUser(id);
-    setSignedIn(user);
+    setSignedIn(user[0]);
   }
 
   //load tasks whenever userid changes
@@ -45,18 +45,19 @@ const Welcome = () => {
     if(userId) {
       fetchTasks();
     }
-  }, [userId]);
+  }, [userId, fetchTasks]);
 
+  //function to load tasks from database
   const fetchTasks = async () => {
     try {
       const tasks = await getTasks(userId);
       setTaskItems(tasks);
-      console.log(tasks);
     } catch (error) {
       console.log('Error', 'failed to load tasks');
     }
   }
 
+  //function to add tasks to database
   const handleAddTask = async () => {
     if (!taskTitle.trim()) {
       alert('Please enter a task title');
@@ -78,16 +79,31 @@ const Welcome = () => {
     }
   }
 
+  //signs out the user
   const handleSignOut = async () => {
-    await signOut();
-    router.replace('/');
+    try {
+      await signOut();
+      router.replace('/');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to sign out');
+      console.log(error);
+    }
   };
   
+  //renders list of tasks
   const renderTaskItems = () => {
     if (taskItems.length === 0) {
       return <Text style={styles.noTasksText}>No tasks found</Text>;
     }
-  
+    
+    //date formatting options
+    const dateOptions = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    };
+    
     return taskItems.map((item, index) => (
       <View key={`${item.title}-${index}`} style={[
         styles.taskItem,
@@ -98,7 +114,7 @@ const Welcome = () => {
         <Text style={styles.taskTitle}>{item.title}</Text>
         <View style={styles.taskMeta}>
           <Text style={styles.taskDeadline}>
-            📅 {new Date(item.deadline).toLocaleDateString()}
+            📅 {new Date(item.deadline).toLocaleDateString(undefined, dateOptions)}
           </Text>
           {item.priority && (
             <Text style={styles.taskPriority}>
@@ -112,7 +128,12 @@ const Welcome = () => {
 
   return (
     <View style={styles.container}>
-      <Text>Welcome, {signedIn?.first_name || 'User'}!</Text>
+      <View style={styles.header}>
+        <Text style={styles.welcome}>Welcome, {signedIn.first_name + signedIn.last_name}!</Text>
+        <TouchableOpacity onPress={handleSignOut}>
+          <Text style={styles.welcome}>Sign Out</Text>
+        </TouchableOpacity>
+      </View>
       <View >
           {/* Today's Tasks */}
           <View style={styles.tasksWrapper}>
@@ -154,10 +175,14 @@ const Welcome = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#ffffff',
-  },  
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    marginHorizontal: 20,
+  }, 
   pressable: {
       width: '100%',
       alignItems: 'center',
@@ -172,13 +197,17 @@ const styles = StyleSheet.create({
       margin: 10,
       borderRadius: 5,
   },
+  welcome: {
+    fontSize: 14,
+  },
   tasksWrapper: {
-      paddingTop: 80,
+      paddingTop: 20,
       paddingHorizontal: 20,
   },
   sectionTitle: {
       fontSize: 24,
-      fontWeight: 'bold',    
+      fontWeight: 'bold',
+      textAlign: 'center',    
   },
   items: {
     marginTop: 30,
