@@ -2,29 +2,22 @@ import supabase from "../lib/supabase";
 import { signOut } from "../lib/supabase_auth"
 import { addTask, getTasks, getUser } from "../lib/supabase_crud";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { Alert, ScrollView, View, Text, Pressable, StyleSheet, KeyboardAvoidingView, TextInput, Platform, TouchableOpacity, Keyboard, Modal } from "react-native"
-import Task from "../components/Task";
+import { useEffect, useState, } from "react";
+import { Alert, ScrollView, View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Keyboard, Modal } from "react-native"
 import CreateTaskModal from "../components/CreateTaskModal";
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from "@react-native-picker/picker";
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const Welcome = () => {
   const [userId, setUserId] = useState(null);
   const [signedIn, setSignedIn] = useState('');
   const router = useRouter();
   const [taskItems, setTaskItems] = useState([]);
-  const [taskTitle, setTaskTitle] = useState('');
-  const [deadline, setDeadline] = useState(new Date());
-  const [priority, setPriority] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
 
-  const priorityLevels = ['low', 'medium', 'high'];
-
+  //grab user data
   useEffect(() => {
     const getUserData = async () => {
       const { data: {user} } = await supabase.auth.getUser();
-
       if (user) {
         setUserId(user.id); //sets current session user id to UUID
         await loadUser(user.id);
@@ -34,13 +27,13 @@ const Welcome = () => {
     getUserData();
   }, []);
 
-  //get first & last name of user
+  //load user details
   const loadUser = async (id) => {
     const user = await getUser(id);
     setSignedIn(user[0]);
   }
 
-  //load tasks whenever userid changes
+  //load tasks when userId changes
   useEffect(() => {
     if(userId) {
       fetchTasks();
@@ -55,29 +48,18 @@ const Welcome = () => {
     } catch (error) {
       console.log('Error', 'failed to load tasks');
     }
-  }
+  };
 
-  //function to add tasks to database
-  const handleAddTask = async () => {
-    if (!taskTitle.trim()) {
-      alert('Please enter a task title');
-      return;
-    }
+  //create new task and refresh task list
+  const handleCreateTask = async (taskData) => {
     try {
-      //add task to database
-      await addTask(userId, taskTitle, deadline, priority);
-
-      //get new list of tasks
+      await addTask(userId, taskData.title, taskData.deadline, taskData.priority);
       await fetchTasks();
-
-      //reset state variables
-      setTaskTitle('');
-      setDeadline(new Date());
-      setPriority('low');  
+      setModalVisible(false);
     } catch (error) {
-      alert(error);
+      alert(error.message);
     }
-  }
+  };
 
   //signs out the user
   const handleSignOut = async () => {
@@ -126,48 +108,44 @@ const Welcome = () => {
     ));
   };
 
+
   return (
     <View style={styles.container}>
+
       <View style={styles.header}>
         <Text style={styles.welcome}>Welcome, {signedIn.first_name + signedIn.last_name}!</Text>
         <TouchableOpacity onPress={handleSignOut}>
           <Text style={styles.welcome}>Sign Out</Text>
         </TouchableOpacity>
       </View>
+
       <View >
           {/* Today's Tasks */}
           <View style={styles.tasksWrapper}>
               <Text style={styles.sectionTitle}>Today's Tasks</Text>
-              <ScrollView style={styles.items}>
-                {renderTaskItems()}
+              <ScrollView contentContainerStyle={styles.items}>
+                {renderTaskItems()} 
               </ScrollView>
           </View>
       </View>
+
       {/* write a task*/}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.writeTaskWrapper}
         >
-        <TextInput style={styles.input} value={taskTitle} placeholder={"Write a Task"} onChangeText={text => setTaskTitle(text)}/>
-        {/* <Text>Select a date</Text>
-        <DateTimePicker
-          value={deadline}
-          mode="date"
-          display= "default"
-          onChange={(event, selectedDate) => {
-            if (selectedDate) {
-              setDeadline(selectedDate);
-            }
-          }}
-        /> */}
-        <TouchableOpacity onPress={() => handleAddTask()}> 
-          <View style={styles.addWrapper}>
-            <Text style={styles.addText}>+</Text>
+        <TouchableOpacity onPress={() => setModalVisible(true)}> 
+          <View style={[styles.addWrapper, { backgroundColor: '#34c759' }]}>
+            <Icon name="plus" size={24} color="white" />
           </View>
         </TouchableOpacity>
       </KeyboardAvoidingView>
 
-      
+      <CreateTaskModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onCreateTask={handleCreateTask}
+      />
     </View>
   );
 }
@@ -203,6 +181,7 @@ const styles = StyleSheet.create({
   tasksWrapper: {
       paddingTop: 20,
       paddingHorizontal: 20,
+      paddingBottom: 80,
   },
   sectionTitle: {
       fontSize: 24,
@@ -210,15 +189,15 @@ const styles = StyleSheet.create({
       textAlign: 'center',    
   },
   items: {
-    marginTop: 30,
+    marginTop: 20,
   },
   writeTaskWrapper: {
     position: 'absolute',
-    bottom: 60,
+    bottom: 40,
+    right: 30,
     width: '100%',
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   input: {
     paddingVertical: 15,
@@ -232,12 +211,11 @@ const styles = StyleSheet.create({
   addWrapper: {
     width: 60,
     height: 60,
-    backgroundColor: 'orange',
     borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'orange',
+    borderColor: 'white',
   },
   taskItem: {
     padding: 15,
@@ -284,6 +262,10 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 20,
     fontSize: 16,
+  },
+  addText: {
+    fontSize: 24,
+    fontWeight: 'semi-bold',
   },
 })
 

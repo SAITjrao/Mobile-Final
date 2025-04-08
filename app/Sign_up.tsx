@@ -1,8 +1,7 @@
 import { StyleSheet, TextInput, View, Pressable, Text } from 'react-native';
-import { signUp, signIn, signOut } from '../lib/supabase_auth';
-import { useState, useEffect } from 'react';
+import { signUp } from '../lib/supabase_auth';
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { replace } from 'expo-router/build/global-state/routing';
 
 export default function Sign_up(){
     const [firstName, setfirstName] = useState<string>("");
@@ -44,7 +43,7 @@ export default function Sign_up(){
                 const user = await signUp(email, password, firstName, lastName);
                 alert("Thank you for signing up. Please check your email for the verification link.")
                 console.log("user", user);
-                router.replace('/') //confirm routing structure
+                router.replace('/')
             } catch (error) {
                 console.error("Error signing up:", error);
             }

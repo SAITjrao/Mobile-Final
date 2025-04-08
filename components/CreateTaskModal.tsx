@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Button, Menu, Divider, Provider } from 'react-native-paper';
+import { Picker } from '@react-native-picker/picker';
 
 const CreateTaskModal = ({ visible, onClose, onCreateTask}) => {
   const [taskTitle, setTaskTitle] = useState('');
   const [deadline, setDeadline] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [priority, setPriority] = useState('');
+  const [priority, setPriority] = useState('medium');
   const [priorityMenuVisible, setPriorityMenuVisible] = useState(false);
 
   const handleCreateTask = () => {
@@ -15,9 +16,24 @@ const CreateTaskModal = ({ visible, onClose, onCreateTask}) => {
       alert('Please enter a task title');
       return;
     }
-    
-  };
 
+    if (!priority) {
+        alert('Please select a priority');
+        return;
+    }
+
+    onCreateTask({
+        title: taskTitle,
+        deadline: deadline,
+        priority: priority.toLowerCase()
+    });
+
+    // Reset form
+    setTaskTitle('');
+    setDeadline(new Date());
+    setPriority('medium');
+  };
+  
   const onChangeDate = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
@@ -25,7 +41,22 @@ const CreateTaskModal = ({ visible, onClose, onCreateTask}) => {
     }
   };
 
-  const priorityOptions = ['Low', 'Medium', 'High'];
+  const PriorityButton = ({ label, value, isSelected, onPress }) => (
+    <TouchableOpacity
+      style={[
+        styles.priorityButton,
+        isSelected && styles[`${value}PrioritySelected`]
+      ]}
+      onPress={onPress}
+    >
+      <Text style={[
+        styles.priorityButtonText,
+        isSelected && styles[`${value}PriorityText`]
+      ]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 
   return (
     <Provider>
@@ -67,32 +98,26 @@ const CreateTaskModal = ({ visible, onClose, onCreateTask}) => {
               />
             )}
 
-            {/* Priority Selector */}
-            <Menu
-              visible={priorityMenuVisible}
-              onDismiss={() => setPriorityMenuVisible(false)}
-              anchor={
-                <TouchableOpacity 
-                  style={styles.priorityButton}
-                  onPress={() => setPriorityMenuVisible(true)}
-                >
-                  <Text style={styles.priorityButtonText}>
-                    Priority: {priority}
-                  </Text>
-                </TouchableOpacity>
-              }
-            >
-              {priorityOptions.map((option) => (
-                <Menu.Item
-                  key={option}
-                  onPress={() => {
-                    setPriority(option);
-                    setPriorityMenuVisible(false);
-                  }}
-                  title={option}
-                />
-              ))}
-            </Menu>
+            <View style={styles.priorityContainer}>
+              <PriorityButton
+                label="Low"
+                value="low"
+                isSelected={priority === 'low'}
+                onPress={() => setPriority('low')}
+              />
+              <PriorityButton
+                label="Medium"
+                value="medium"
+                isSelected={priority === 'medium'}
+                onPress={() => setPriority('medium')}
+              />
+              <PriorityButton
+                label="High"
+                value="high"
+                isSelected={priority === 'high'}
+                onPress={() => setPriority('high')}
+              />
+            </View>
 
             <View style={styles.buttonContainer}>
               <Button 
@@ -166,18 +191,48 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000',
   },
-  priorityButton: {
-    height: 50,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    justifyContent: 'center',
-    paddingHorizontal: 15,
+  priorityContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 20,
+  },
+  priorityButton: {
+    flex: 1,
+    marginHorizontal: 4,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   priorityButtonText: {
     fontSize: 16,
-    color: '#000',
+    color: '#666',
+  },
+  lowPrioritySelected: {
+    backgroundColor: '#e6f7e6',
+    borderColor: '#34c759',
+  },
+  mediumPrioritySelected: {
+    backgroundColor: '#fff7e6',
+    borderColor: '#ff9500',
+  },
+  highPrioritySelected: {
+    backgroundColor: '#ffe6e6',
+    borderColor: '#ff3b30',
+  },
+  lowPriorityText: {
+    color: '#34c759',
+    fontWeight: 'bold',
+  },
+  mediumPriorityText: {
+    color: '#ff9500',
+    fontWeight: 'bold',
+  },
+  highPriorityText: {
+    color: '#ff3b30',
+    fontWeight: 'bold',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -190,6 +245,18 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
+  },
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  picker: {
+    width: '100%',
+    height: 50,
+    backgroundColor: Platform.OS === 'ios' ? '#f5f5f5' : 'white',
   },
 });
 
