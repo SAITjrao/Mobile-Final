@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Button, Menu, Divider, Provider } from 'react-native-paper';
-import { Picker } from '@react-native-picker/picker';
+import { Button, Provider } from 'react-native-paper';
 
 const CreateTaskModal = ({ visible, onClose, onCreateTask}) => {
   const [taskTitle, setTaskTitle] = useState('');

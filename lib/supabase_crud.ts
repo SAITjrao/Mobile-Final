@@ -34,7 +34,7 @@ export async function getTasks(userId) {
       .from(TASK_TABLE)
       .select('id, title, deadline, priority')
       .eq('created_by', userId)
-      .order('deadline', {ascending: false});
+      .order('deadline', {ascending: true});
 
     if (error) throw error;
     return data;

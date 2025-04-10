@@ -1,7 +1,8 @@
 import { StyleSheet, TextInput, View, Pressable, Text, } from 'react-native';
-import { signUp, signIn, signOut } from '../lib/supabase_auth';
+import { signIn } from '../lib/supabase_auth';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
+import { blue300 } from 'react-native-paper/lib/typescript/styles/themes/v2/colors';
 
 export default function App() {
     const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
@@ -56,7 +57,7 @@ export default function App() {
             </Pressable>
             <Text>Don't have an account?</Text>
             <Pressable onPress={() => {router.replace('/Sign_up')}} style={styles.pressable}>
-                <Text style={styles.button}>Sign Up</Text>
+                <Text style={styles.link}>Sign Up</Text>
             </Pressable>
         </View>  
     );
@@ -104,4 +105,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
   },
+  link: {
+    color: '#1723dd',
+    fontSize: 16,
+    marginTop: 10,
+  }
 });

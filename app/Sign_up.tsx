@@ -92,7 +92,7 @@ export default function Sign_up(){
 
             <Text>Already have an account?</Text>
             <Pressable onPress={() => {router.replace('/')}} style={styles.pressable}>
-                <Text style={styles.button}>Sign In</Text>
+                <Text style={styles.link}>Sign In</Text>
             </Pressable>
         </View>  
     );
@@ -138,5 +138,10 @@ export default function Sign_up(){
             fontSize: 32,
             fontWeight: 'bold',
             marginBottom: 16,
-        }
+        },
+        link: {
+            color: '#1723dd',
+            fontSize: 16,
+            marginTop: 10,
+          }
     });

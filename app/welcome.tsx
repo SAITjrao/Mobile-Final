@@ -3,17 +3,18 @@ import { signOut } from "../lib/supabase_auth"
 import { addTask, deleteTask, getTasks, getUser, updateTask } from "../lib/supabase_crud";
 import { useRouter } from "expo-router";
 import { useEffect, useState, } from "react";
-import { Alert, ScrollView, View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Keyboard, Modal } from "react-native"
+import { Alert, ScrollView, View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native"
 import CreateTaskModal from "../components/CreateTaskModal";
 import TaskModal from "../components/TaskModal";
+import ConfirmationModal from "../components/ConfirmationModal";
 import Icon from 'react-native-vector-icons/FontAwesome';
-import Checkbox from 'react-native-vector-icons/Fontisto';
 
 const Welcome = () => {
   const [userId, setUserId] = useState(null);
   const [signedIn, setSignedIn] = useState('');
   const [taskItems, setTaskItems] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [editForm, setEditForm] = useState({
@@ -95,13 +96,21 @@ const Welcome = () => {
     }
   };
 
+  const handleDeleteClick = (taskId: string) => {
+    setTaskToDelete(taskId);
+  };
+
   //delete tasks from database
-  const handleDeleteTask = async (taskId) => {
+  const handleDeleteTask = async () => {
+    if (!taskToDelete) return;
+
     try {
-      await deleteTask(taskId);
+      await deleteTask(taskToDelete);
       await fetchTasks();
     } catch (error) {
       console.log(error);
+    } finally {
+      setTaskToDelete(null);
     }
   }
 
@@ -146,9 +155,9 @@ const Welcome = () => {
       ]}>
         <TouchableOpacity 
           style={styles.checkboxContainer}  
-          onPress={() => handleDeleteTask(item.id)}
+          onPress={() => handleDeleteClick(item.id)}
         >
-          <Checkbox name="checkbox-passive" size={16} color="black" /> 
+          <Icon name="remove" size={16} color="black" /> 
         </TouchableOpacity>
         <TouchableOpacity
           key={item.id}
@@ -179,14 +188,14 @@ const Welcome = () => {
       <View style={styles.header}>
         <Text style={styles.welcome}>Welcome, {signedIn.first_name} {signedIn.last_name}!</Text>
         <TouchableOpacity onPress={handleSignOut}>
-          <Text style={styles.welcome}>Sign Out</Text>
+          <Text style={styles.link}>Sign Out</Text>
         </TouchableOpacity>
       </View>
 
       <View >
           {/* Today's Tasks */}
           <View style={styles.tasksWrapper}>
-              <Text style={styles.sectionTitle}>Today's Tasks</Text>
+              <Text style={styles.sectionTitle}>UPCOMING</Text>
               <ScrollView contentContainerStyle={styles.items}>
                 {renderTaskItems()} 
               </ScrollView>
@@ -219,6 +228,12 @@ const Welcome = () => {
         task={selectedTask}
         editForm={editForm}
         setEditForm={setEditForm}
+      />
+      <ConfirmationModal
+        isOpen={!!taskToDelete}
+        onClose={() => setTaskToDelete(null)}
+        onConfirm={handleDeleteTask}
+        message="Are you sure you want to delete this task?"
       />
     </View>
   );
@@ -285,6 +300,10 @@ const styles = StyleSheet.create({
   },
   items: {
     marginTop: 20,
+  },
+  link: {
+    color: '#1723dd',
+    fontSize: 14,
   },
   writeTaskWrapper: {
     position: 'absolute',
